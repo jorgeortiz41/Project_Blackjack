@@ -1,0 +1,7 @@
+
+Para pereparar el linker para hacer el build correr estos codes, ve a files 
+y ve al proyecto a hasta llegar a la carpeta con src y marcar cmd  luegos los codes:
+
+ca65 src/backgrounds.asm
+ca65 src/reset.asm
+ld65 src/reset.o src/backgrounds.o -C nes.cfg -o backgrounds.nes
