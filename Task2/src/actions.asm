@@ -1,7 +1,7 @@
 .include "constants.inc"
 
 .segment "ZEROPAGE"
-.importzp bet, player_hi, player_lo, dealer_hi, dealer_lo, start_card_tile1, start_card_tile2, start_card_tile3, start_card_tile4, start_card_tile5, start_card_tile6, start_card_tile7, start_card_tile8,player_cards, dealer_cards
+.importzp pad1, bet, bet_score1,bet_score2,bet_score3, previous_pad1, player_hi, player_lo, dealer_hi, dealer_lo, start_card_tile1, start_card_tile2, start_card_tile3, start_card_tile4, start_card_tile5, start_card_tile6, start_card_tile7, start_card_tile8, player_cards, dealer_cards
 
 .segment "CODE"
 .proc loadcard
@@ -159,7 +159,7 @@ end_bridge:
     ADC #$01
     STA dealer_cards
     ; Check if dealer_cards is equal to 0x08
-    CMP #$08
+    CMP #$07
     ; If is equal to 0x08, call update_card_position
     BEQ update_card_position
     ; If is not equal calculate next card position by subtracting 0x5E to dealer_lo
@@ -352,37 +352,118 @@ end:
 
 .export increase_bet
 .proc increase_bet
-  LDA bet
-  CLC
-  ADC #$01              ; Increase bet by 5
-  CMP #$59              ; Cap bet at 30 (memory location $57)
-  BCS cap_bet
-  STA bet
+  lda bet_score1
+  CMP #$23             
+  beq cap_bet
+  lda #$23
+  sta bet_score1
   JSR draw_bet_tile		; Draws the updated bet tile
+  rts
 cap_bet:
+  lda #$1e
+  sta bet_score1
+
+
+;bet score_2
+  lda bet_score2
+  CMP #$27             
+  beq cap_bet2
+  inc bet_score2
+  lda bet_score2
+  sta bet_score2
+  JSR draw_bet_tile		; Draws the updated bet tile
+  rts
+cap_bet2:
+
+;bet score_3
+  lda #$1e
+  sta bet_score2
+  lda bet_score3
+  CMP #$27             
+  beq cap_bet3
+  inc bet_score3
+  lda bet_score3
+  sta bet_score3
+  JSR draw_bet_tile		; Draws the updated bet tile
+  rts
+  cap_bet3:
+  lda #$27
+  sta bet_score3
+  sta bet_score2
+  lda #$23
+  sta bet_score1
+  jsr draw_bet_tile
   RTS
 .endproc
 
 .export decrease_bet
 .proc decrease_bet
-    LDA bet
-    SEC
-    SBC #$01              ; Decrease bet by 5
-    CMP #$52              ; Cap bet at 0 (memory location $52)
-    BCC cap_bet
-    STA bet
-    JSR draw_bet_tile		; Draws the updated bet tile
-    cap_bet:
-    RTS
+  lda bet_score1
+  CMP #$1e             
+  beq cap_bet
+  lda #$1e
+  sta bet_score1
+  JSR draw_bet_tile		; Draws the updated bet tile
+  rts
+cap_bet:
+
+;bet score_2
+  lda bet_score2
+  CMP #$1e             
+  beq cap_bet2
+  dec bet_score2
+  lda bet_score2
+  sta bet_score2
+  lda #$23
+  sta bet_score1
+  JSR draw_bet_tile		; Draws the updated bet tile
+  rts
+cap_bet2:
+
+;bet score_3
+
+  lda bet_score3
+  CMP #$1E             
+  beq cap_bet3
+  DEC bet_score3
+  lda #$27
+  sta bet_score2
+  JSR draw_bet_tile		; Draws the updated bet tile
+  rts
+  cap_bet3:
+  jsr draw_bet_tile
+  RTS
 .endproc
 
 .proc draw_bet_tile
-  LDX bet				             
+  LDX bet_score1				             
   ; Set PPU address to the position where the bet tile should be displayed
   LDA PPUSTATUS         ; Read PPU status to reset the latch
   LDA #$21
   STA PPUADDR           ; Set high byte of PPU address
-  LDA #$F7              ; Set low byte of PPU address (example position)
+  LDA #$fa              ; Set low byte of PPU address (example position)
+  STA PPUADDR
+  TXA
+  STA PPUDATA           ; Store tile to PPU data
+
+;draw bet_score2
+  LDX bet_score2				             
+  ; Set PPU address to the position where the bet tile should be displayed
+  LDA PPUSTATUS         ; Read PPU status to reset the latch
+  LDA #$21
+  STA PPUADDR           ; Set high byte of PPU address
+  LDA #$f9              ; Set low byte of PPU address (example position)
+  STA PPUADDR
+  TXA
+  STA PPUDATA           ; Store tile to PPU data
+
+;draw bet_score3
+  LDX bet_score3				             
+  ; Set PPU address to the position where the bet tile should be displayed
+  LDA PPUSTATUS         ; Read PPU status to reset the latch
+  LDA #$21
+  STA PPUADDR           ; Set high byte of PPU address
+  LDA #$f8              ; Set low byte of PPU address (example position)
   STA PPUADDR
   TXA
   STA PPUDATA           ; Store tile to PPU data
