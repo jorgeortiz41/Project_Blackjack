@@ -1,2 +1,3 @@
-.o
-.nss
+*.o
+*.nss
+*.DS_Store
