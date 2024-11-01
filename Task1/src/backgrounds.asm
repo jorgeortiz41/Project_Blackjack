@@ -1,32 +1,10 @@
 .include "constants.inc"
 .include "header.inc"
 
-.segment "ZEROPAGE"
-	pad1: .res 1  	;Controller 1 state
-	bet: .res 1		;Current bet Amount
-	previous_pad1: .res 1  ; Reserve space for previous pad state
-	player_hi: .res 1
-	player_lo: .res 1
-	dealer_hi: .res 1
-	dealer_lo: .res 1
-	start_card_tile1: .res 1
-	start_card_tile2: .res 1
-	start_card_tile3: .res 1
-	start_card_tile4: .res 1
-	start_card_tile5: .res 1
-	start_card_tile6: .res 1
-	start_card_tile7: .res 1
-	start_card_tile8: .res 1
-	player_cards: .res 1
-	dealer_cards: .res 1
-.exportzp pad1, bet, previous_pad1, player_hi, player_lo, dealer_hi, dealer_lo, start_card_tile1, start_card_tile2, start_card_tile3, start_card_tile4, start_card_tile5, start_card_tile6, start_card_tile7, start_card_tile8, player_cards, dealer_cards
-
 .segment "CODE"
 .proc irq_handler
   RTI
 .endproc
-
-.import read_controller1, check_buttons, draw_card_dealer, draw_card_player
 
 .proc nmi_handler
   	LDA #$00
@@ -34,13 +12,6 @@
   	LDA #$02
   	STA OAMDMA
 	LDA #$00
-
-	;read controller
-	JSR read_controller1
-
-	; update tiles *after* DMA transfer
-  	; and after reading controller state
-	JSR check_buttons
 	
 	; Optional: Reset scroll only if necessary
 	LDA #$00
@@ -53,37 +24,6 @@
 
 .export main
 .proc main
-	;Initialize bet to zero tile
-	LDA #$52
-	STA bet
-	LDA #$22
-	STA player_hi
-	LDA #$45
-	STA player_lo  
-	LDA #$20
-	STA dealer_hi
-	LDA #$68
-	STA dealer_lo
-	LDA #$70
-	STA start_card_tile1
-	LDA #$71
-	STA start_card_tile2
-	LDA #$72
-	STA start_card_tile3
-	LDA #$73
-	STA start_card_tile4
-	LDA #$EC
-	STA start_card_tile5
-	LDA #$ED
-	STA start_card_tile6
-	LDA #$EE
-	STA start_card_tile7
-	LDA #$EF
-	STA start_card_tile8
-	LDA #$00
-	STA player_cards
-	LDA #$00
-	STA dealer_cards
   ; write a palette
   LDX PPUSTATUS
   LDX #$3f
@@ -149,9 +89,6 @@ backloop4:
 	LDA #%00000000      ; set bit 0 to 0 to end strobe
 	STA $4016
 
-	JSR draw_all_cards
-	JSR draw_deck
-
 vblankwait:       ; wait for another vblank before continuing
   BIT PPUSTATUS
   BPL vblankwait
@@ -163,146 +100,6 @@ vblankwait:       ; wait for another vblank before continuing
 
 forever:
   JMP forever
-.endproc
-
-.proc draw_deck
-	; Set dealer_lo to first slot in the deck	
-	LDA #$65
-	STA dealer_lo
-	LDA #$20
-	STA dealer_hi
-	; Draw first tile of the deck
-	LDX #$62
-	LDA PPUSTATUS
-	LDA dealer_hi
-	STA PPUADDR
-	LDA dealer_lo
-	STA PPUADDR
-	TXA
-	STA PPUDATA
-
-	; Set dealer_lo to second slot in the deck
-	LDA #$66
-	STA dealer_lo
-	; Draw second tile of the deck
-	LDX #$63
-	LDA PPUSTATUS
-	LDA dealer_hi
-	STA PPUADDR
-	LDA dealer_lo
-	STA PPUADDR
-	TXA
-	STA PPUDATA
-
-	; Set dealer_lo to third slot in the deck
-	LDA #$85
-	STA dealer_lo
-
-	; Draw third tile of the deck
-	LDX #$64
-	LDA PPUSTATUS
-	LDA dealer_hi
-	STA PPUADDR
-	LDA dealer_lo
-	STA PPUADDR
-	TXA
-	STA PPUDATA
-
-	; Set dealer_lo to fourth slot in the deck
-	LDA #$86
-	STA dealer_lo
-
-	; Draw fourth tile of the deck
-	LDX #$65
-	LDA PPUSTATUS
-	LDA dealer_hi
-	STA PPUADDR
-	LDA dealer_lo
-	STA PPUADDR
-	TXA
-	STA PPUDATA
-
-	; Set dealer_lo to fifth slot in the deck
-	LDA #$A5
-	STA dealer_lo
-
-	; Draw fifth tile of the deck
-	LDX #$64
-	LDA PPUSTATUS
-	LDA dealer_hi
-	STA PPUADDR
-	LDA dealer_lo
-	STA PPUADDR
-	TXA
-	STA PPUDATA
-
-	; Set dealer_lo to sixth slot in the deck
-	LDA #$A6
-	STA dealer_lo
-
-	; Draw sixth tile of the deck
-	LDX #$65
-	LDA PPUSTATUS
-	LDA dealer_hi
-	STA PPUADDR
-	LDA dealer_lo
-	STA PPUADDR
-	TXA
-	STA PPUDATA
-
-	; Set dealer_lo to seventh slot in the deck
-	LDA #$C5
-	STA dealer_lo
-
-	; Draw seventh tile of the deck
-	LDX #$66
-	LDA PPUSTATUS
-	LDA dealer_hi
-	STA PPUADDR
-	LDA dealer_lo
-	STA PPUADDR
-	TXA
-	STA PPUDATA
-
-	; Set dealer_lo to eighth slot in the deck
-	LDA #$C6
-	STA dealer_lo
-
-	; Draw eighth tile of the deck
-	LDX #$67
-	LDA PPUSTATUS
-	LDA dealer_hi
-	STA PPUADDR
-	LDA dealer_lo
-	STA PPUADDR
-	TXA
-	STA PPUDATA
-
-	LDA #$20
-	STA dealer_hi
-	LDA #$68
-	STA dealer_lo
-
-	;End
-	RTS
-.endproc
-
-.proc draw_all_cards
-	;Draw player cards
-draw_player_cards:
-	LDA player_cards
-	CMP #$10
-	BEQ draw_dealer_cards
-	JSR draw_card_player
-	JMP draw_player_cards
-draw_dealer_cards:
-	LDA	dealer_cards
-	CMP #$0F
-	BEQ end
-	JSR draw_card_dealer
-	JMP draw_dealer_cards
-end:
-	RTS
 .endproc
 
 .segment "VECTORS"
@@ -318,24 +115,24 @@ back:
 	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$02,$02,$02
 	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
 	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$62,$63,$02,$70,$71,$02,$74,$75,$02,$78,$79
+	.byte $02,$84,$85,$02,$88,$89,$02,$94,$95,$02,$d4,$d5,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$64,$65,$02,$72,$73,$02,$76,$77,$02,$7a,$7b
+	.byte $02,$86,$87,$02,$8a,$8b,$02,$96,$97,$02,$d6,$d7,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$64,$65,$02,$e8,$e9,$02,$e0,$e1,$02,$ec,$ed
+	.byte $02,$e4,$e5,$02,$e8,$e9,$02,$e0,$e1,$02,$e0,$e1,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$66,$67,$02,$ea,$eb,$02,$e2,$e3,$02,$ee,$ef
+	.byte $02,$e6,$e7,$02,$ea,$eb,$02,$e2,$e3,$02,$e2,$e3,$02,$41,$02,$02
 	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
 	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$98,$99,$02,$a4,$a5,$02,$a8,$a9,$02,$b4,$b5
+	.byte $02,$b8,$b9,$02,$c4,$c5,$02,$c8,$c9,$02,$d4,$d5,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$9a,$9b,$02,$a6,$a7,$02,$aa,$ab,$02,$b6,$b7
+	.byte $02,$ba,$bb,$02,$c6,$c7,$02,$ca,$cb,$02,$d6,$d7,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$e8,$e9,$02,$e4,$e5,$02,$ec,$ed,$02,$e0,$e1
+	.byte $02,$e8,$e9,$02,$e4,$e5,$02,$ec,$ed,$02,$e0,$e1,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$ea,$eb,$02,$e6,$e7,$02,$ee,$ef,$02,$e2,$e3
+	.byte $02,$ea,$eb,$02,$e6,$e7,$02,$ee,$ef,$02,$e2,$e3,$02,$41,$02,$02
 	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
 	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
 	.byte $02,$02,$02,$02,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50
@@ -348,24 +145,24 @@ back:
 	.byte $30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$02,$02,$02
 	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
 	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$d4,$d5,$02,$d4,$d5,$02,$d4,$d5,$02,$d4,$d5
+	.byte $02,$d4,$d5,$02,$d4,$d5,$02,$d4,$d5,$02,$d4,$d5,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$d6,$d7,$02,$d6,$d7,$02,$d6,$d7,$02,$d6,$d7
+	.byte $02,$d6,$d7,$02,$d6,$d7,$02,$d6,$d7,$02,$d6,$d7,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$e0,$e1,$02,$e0,$e1,$02,$e0,$e1,$02,$e0,$e1
+	.byte $02,$e0,$e1,$02,$e0,$e1,$02,$e0,$e1,$02,$e0,$e1,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$e2,$e3,$02,$e2,$e3,$02,$e2,$e3,$02,$e2,$e3
+	.byte $02,$e2,$e3,$02,$e2,$e3,$02,$e2,$e3,$02,$e2,$e3,$02,$41,$02,$02
 	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
 	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
-	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
-	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$d4,$d5,$02,$d4,$d5,$02,$d4,$d5,$02,$d4,$d5
+	.byte $02,$d4,$d5,$02,$d4,$d5,$02,$d4,$d5,$02,$d4,$d5,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$d6,$d7,$02,$d6,$d7,$02,$d6,$d7,$02,$d6,$d7
+	.byte $02,$d6,$d7,$02,$d6,$d7,$02,$d6,$d7,$02,$d6,$d7,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$e0,$e1,$02,$e0,$e1,$02,$e0,$e1,$02,$e0,$e1
+	.byte $02,$e0,$e1,$02,$e0,$e1,$02,$e0,$e1,$02,$e0,$e1,$02,$41,$02,$02
+	.byte $02,$02,$02,$40,$02,$e2,$e3,$02,$e2,$e3,$02,$e2,$e3,$02,$e2,$e3
+	.byte $02,$e2,$e3,$02,$e2,$e3,$02,$e2,$e3,$02,$e2,$e3,$02,$41,$02,$02
 	.byte $02,$02,$02,$40,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02
 	.byte $02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$41,$02,$02
 	.byte $02,$02,$02,$02,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50
