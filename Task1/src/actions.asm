@@ -28,7 +28,7 @@
 .proc draw_card_dealer
     ; Check if dealer_cards is equal to 0x0B
     LDA dealer_cards
-    CMP #$0B
+    CMP #$0F
     ; If is equal to 0x0B, end procedure
     BEQ end_bridge
 
@@ -96,7 +96,7 @@
 
 end_bridge:
     LDA dealer_cards
-    CMP #$0B
+    CMP #$10
     ; If is equal to 0x0B, end procedure
     BEQ end
 
@@ -159,8 +159,8 @@ end_bridge:
     ADC #$01
     STA dealer_cards
     ; Check if dealer_cards is equal to 0x08
-    CMP #$08
-    ; If is equal to 0x08, call update_card_position
+    CMP #$07
+    ; If is equal to 0x07, call update_card_position
     BEQ update_card_position
     ; If is not equal calculate next card position by subtracting 0x5E to dealer_lo
     LDA dealer_lo
@@ -188,7 +188,7 @@ end:
 .proc draw_card_player
     ; Check if player_cards is equal to 0x0B
     LDA player_cards
-    CMP #$0B
+    CMP #$10
     ; If is equal to 0x0B, end procedure
     BEQ end_bridge
 
@@ -256,7 +256,7 @@ end:
 
 end_bridge:
     LDA player_cards
-    CMP #$0B
+    CMP #$10
     ; If is equal to 0x0B, end procedure
     BEQ end
 
@@ -344,9 +344,11 @@ end:
     RTS
 .endproc
 
+.import reset_handler
+
 .export reset_table
 .proc reset_table
-  ; Logic to clear all drawn cards and reset the display
+  JSR reset_handler
   RTS
 .endproc
 

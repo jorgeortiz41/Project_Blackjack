@@ -26,7 +26,7 @@
   RTI
 .endproc
 
-.import read_controller1, check_buttons
+.import read_controller1, check_buttons, draw_card_dealer, draw_card_player
 
 .proc nmi_handler
   	LDA #$00
@@ -41,7 +41,7 @@
 	; update tiles *after* DMA transfer
   	; and after reading controller state
 	JSR check_buttons
-
+	
 	; Optional: Reset scroll only if necessary
 	LDA #$00
 	STA $2005   ; Set horizontal scroll to 0
@@ -62,7 +62,7 @@
 	STA player_lo  
 	LDA #$20
 	STA dealer_hi
-	LDA #$65
+	LDA #$68
 	STA dealer_lo
 	LDA #$70
 	STA start_card_tile1
@@ -149,6 +149,9 @@ backloop4:
 	LDA #%00000000      ; set bit 0 to 0 to end strobe
 	STA $4016
 
+	JSR draw_all_cards
+	JSR draw_deck
+
 vblankwait:       ; wait for another vblank before continuing
   BIT PPUSTATUS
   BPL vblankwait
@@ -160,6 +163,146 @@ vblankwait:       ; wait for another vblank before continuing
 
 forever:
   JMP forever
+.endproc
+
+.proc draw_deck
+	; Set dealer_lo to first slot in the deck	
+	LDA #$65
+	STA dealer_lo
+	LDA #$20
+	STA dealer_hi
+	; Draw first tile of the deck
+	LDX #$62
+	LDA PPUSTATUS
+	LDA dealer_hi
+	STA PPUADDR
+	LDA dealer_lo
+	STA PPUADDR
+	TXA
+	STA PPUDATA
+
+	; Set dealer_lo to second slot in the deck
+	LDA #$66
+	STA dealer_lo
+	; Draw second tile of the deck
+	LDX #$63
+	LDA PPUSTATUS
+	LDA dealer_hi
+	STA PPUADDR
+	LDA dealer_lo
+	STA PPUADDR
+	TXA
+	STA PPUDATA
+
+	; Set dealer_lo to third slot in the deck
+	LDA #$85
+	STA dealer_lo
+
+	; Draw third tile of the deck
+	LDX #$64
+	LDA PPUSTATUS
+	LDA dealer_hi
+	STA PPUADDR
+	LDA dealer_lo
+	STA PPUADDR
+	TXA
+	STA PPUDATA
+
+	; Set dealer_lo to fourth slot in the deck
+	LDA #$86
+	STA dealer_lo
+
+	; Draw fourth tile of the deck
+	LDX #$65
+	LDA PPUSTATUS
+	LDA dealer_hi
+	STA PPUADDR
+	LDA dealer_lo
+	STA PPUADDR
+	TXA
+	STA PPUDATA
+
+	; Set dealer_lo to fifth slot in the deck
+	LDA #$A5
+	STA dealer_lo
+
+	; Draw fifth tile of the deck
+	LDX #$64
+	LDA PPUSTATUS
+	LDA dealer_hi
+	STA PPUADDR
+	LDA dealer_lo
+	STA PPUADDR
+	TXA
+	STA PPUDATA
+
+	; Set dealer_lo to sixth slot in the deck
+	LDA #$A6
+	STA dealer_lo
+
+	; Draw sixth tile of the deck
+	LDX #$65
+	LDA PPUSTATUS
+	LDA dealer_hi
+	STA PPUADDR
+	LDA dealer_lo
+	STA PPUADDR
+	TXA
+	STA PPUDATA
+
+	; Set dealer_lo to seventh slot in the deck
+	LDA #$C5
+	STA dealer_lo
+
+	; Draw seventh tile of the deck
+	LDX #$66
+	LDA PPUSTATUS
+	LDA dealer_hi
+	STA PPUADDR
+	LDA dealer_lo
+	STA PPUADDR
+	TXA
+	STA PPUDATA
+
+	; Set dealer_lo to eighth slot in the deck
+	LDA #$C6
+	STA dealer_lo
+
+	; Draw eighth tile of the deck
+	LDX #$67
+	LDA PPUSTATUS
+	LDA dealer_hi
+	STA PPUADDR
+	LDA dealer_lo
+	STA PPUADDR
+	TXA
+	STA PPUDATA
+
+	LDA #$20
+	STA dealer_hi
+	LDA #$68
+	STA dealer_lo
+
+	;End
+	RTS
+.endproc
+
+.proc draw_all_cards
+	;Draw player cards
+draw_player_cards:
+	LDA player_cards
+	CMP #$10
+	BEQ draw_dealer_cards
+	JSR draw_card_player
+	JMP draw_player_cards
+draw_dealer_cards:
+	LDA	dealer_cards
+	CMP #$0F
+	BEQ end
+	JSR draw_card_dealer
+	JMP draw_dealer_cards
+end:
+	RTS
 .endproc
 
 .segment "VECTORS"
