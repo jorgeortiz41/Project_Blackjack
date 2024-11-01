@@ -22,7 +22,8 @@
 	start_card_tile8: .res 1
 	player_cards: .res 1
 	dealer_cards: .res 1
-.exportzp pad1, bet, bet_score1,bet_score2,bet_score3, previous_pad1, player_hi, player_lo, dealer_hi, dealer_lo, start_card_tile1, start_card_tile2, start_card_tile3, start_card_tile4, start_card_tile5, start_card_tile6, start_card_tile7, start_card_tile8, player_cards, dealer_cards
+	reset_state: .res 1
+.exportzp pad1, bet, bet_score1,bet_score2,bet_score3, previous_pad1, player_hi, player_lo, dealer_hi, dealer_lo, start_card_tile1, start_card_tile2, start_card_tile3, start_card_tile4, start_card_tile5, start_card_tile6, start_card_tile7, start_card_tile8, player_cards, dealer_cards, reset_state
 
 .segment "CODE"
 .proc irq_handler
@@ -45,6 +46,14 @@
   	; and after reading controller state
 	JSR check_buttons
 
+	LDA reset_state
+	CMP #$01
+	BEQ reset_table
+	JMP done
+	reset_table:
+		JMP reset_handler
+	done:
+
 	; Optional: Reset scroll only if necessary
 	LDA #$00
 	STA $2005   ; Set horizontal scroll to 0
@@ -57,6 +66,8 @@
 .export main
 .proc main
 	;Initialize bet to zero tile
+	LDA #$00
+	STA reset_state
 	LDA #$52
 	STA bet
 	lda #$1e

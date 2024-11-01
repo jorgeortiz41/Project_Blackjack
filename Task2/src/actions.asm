@@ -1,28 +1,11 @@
 .include "constants.inc"
 
 .segment "ZEROPAGE"
-.importzp pad1, bet, bet_score1,bet_score2,bet_score3, previous_pad1, player_hi, player_lo, dealer_hi, dealer_lo, start_card_tile1, start_card_tile2, start_card_tile3, start_card_tile4, start_card_tile5, start_card_tile6, start_card_tile7, start_card_tile8, player_cards, dealer_cards
+.importzp pad1, bet, bet_score1,bet_score2,bet_score3, previous_pad1, player_hi, player_lo, dealer_hi, dealer_lo, start_card_tile1, start_card_tile2, start_card_tile3, start_card_tile4, start_card_tile5, start_card_tile6, start_card_tile7, start_card_tile8, player_cards, dealer_cards, reset_state
 
 .segment "CODE"
-.proc loadcard
-	LDX #$A0
-  LDA PPUSTATUS
-  LDA #$20
-  STA PPUADDR
-  LDA #$65
-  STA PPUADDR
-  TXA
-  STA PPUDATA
-  LDX #$A1
-  LDA PPUSTATUS
-  LDA #$20
-  STA PPUADDR
-  LDA #$66
-  STA PPUADDR
-  TXA
-  STA PPUDATA
-  RTS
-.endproc
+
+.import reset_handler
 
 .export draw_card_dealer
 .proc draw_card_dealer
@@ -346,7 +329,8 @@ end:
 
 .export reset_table
 .proc reset_table
-  ; Logic to clear all drawn cards and reset the display
+  LDA #$01
+  STA reset_state
   RTS
 .endproc
 
